@@ -31,3 +31,9 @@ Zadanie 3.
 
 Zadanie 4.
 1)	ALTER TABLE zadanie DROP FOREIGN KEY zadanie_ibfk_1;
+
+2) 	ALTER TABLE zadanie ADD CONSTRAINT zadanie_ibfk_1_setnull FOREIGN KEY (projekt) REFERENCES projekt(id_projektu) ON DELETE SET NULL;
+
+3)	DELETE FROM projekt WHERE id_projektu = 1;
+
+4)	SELECT id_zadania, nazwa_zadania, projekt FROM zadanie WHERE projekt IS NULL;
