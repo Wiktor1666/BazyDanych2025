@@ -1,0 +1,172 @@
+Zadanie 1.
+
+SELECT
+    COCNCAT(FIRST_NAME, " ", LAST_NAME) AS Nazwisko,
+    pensja AS Pensja,
+    RANK() OVER (ORDER BY pensja DESC) AS 'Ranking pensji'
+FROM EMPLOYEE;
+
+
+Zadanie 2.
+
+SELECT
+    COCNCAT(FIRST_NAME, " ", LAST_NAME) AS Nazwisko,
+    pensja AS Pensja,
+    SUM(pensja) OVER () AS 'Suma pensji wszystkich pracownikow'
+FROM EMPLOYEE;
+
+
+Zadanie 3.
+
+SELECT
+    e.LAST_NAME AS Nazwisko,
+    p.PRODUCT_NAME AS 'Nazwa produktu',
+    SUM(op.AMOUNT * op.SELL_PRICE)
+        OVER (PARTITION BY o.EMPLOYEE_ID) AS 'Suma wartosci sprzedazy',
+    RANK() OVER (ORDER BY op.AMOUNT * op.SELL_PRICE DESC) AS 'Ranking wartosci sprzedazy'
+FROM ORDER_POSITION op
+JOIN `ORDER` o ON op.ORDER_ID = o.ORDER_ID
+JOIN EMPLOYEE e ON o.EMPLOYEE_ID = e.EMPLOYEE_NAME
+JOIN PRODUCT p ON op.PRODUCT_ID = p.PRODUCT_ID;
+
+
+Zadanie 4.
+
+SELECT
+    e.LAST_NAME AS Nazwisko,
+    p.PRODUCT_NAME AS 'Nazwa produktu',
+    OP.SELL_PRICE AS Cena,
+    COUNT(*) OVER (
+        PARTITION BY p.PRODUCT_ID, o.ORDER_DATE
+    ) AS 'Ilosc transakcji danego dnia',
+    SUM(op.AMOUNT * op.SELL_PRICE) OVER (
+        PARTITION BY p.PRODUCT_ID, o.ORDER_DATE
+    ) AS 'Dzienna suma',
+    LAG(op.SELL_PRICE) OVER (
+        PARTITION BY p.PRODUCT_ID ORDER BY o.ORDER_DATE
+    ) AS 'Poprzednia cena',
+    LEAD(op.SELL_PRICE) OVER (
+        PARTITION BY p.PRODUCT_ID ORDER BY o.ORDER_DATE
+    ) AS 'Nastepna cena'
+FROM ORDER_POSITION op
+JOIN `ORDER` o ON op.ORDER_ID = o.ORDER_ID
+JOIN EMPLOYEE e ON o.EMPLOYEE_ID = e.EMPLOYEE_NAME
+JOIN PRODUCT p ON op.PRODUCT_ID = p.PRODUCT_ID;
+
+
+Zadanie 5.
+
+SELECT
+    p.PRODUCT_NAME,
+    op.SELL_PRICE,
+    SUM(op.AMOUNT * op.SELL_PRICE)
+        OVER (PARTITION BY MONTH(o.ORDER_DATE)) AS 'Suma miesieczna',
+    SUM(op.AMOUNT * op.SELL_PRICE)
+        OVER (
+            PARTITION BY MONTH(o.ORDER_DATE)
+            ORDER BY o.ORDER_DATE
+        ) AS 'Rosnaca miesieczna suma'
+FROM ORDER_POSITION op
+JOIN `ORDER` o ON op.ORDER_ID = o.ORDER_ID
+JOIN PRODUCT p ON op.PRODUCT_ID = p.PRODUCT_ID;
+
+
+Zadanie 6.
+
+SELECT
+    c.CATEGORY_NAME,
+    SUM(CASE WHEN MONTH(o.ORDER_DATE)=1 THEN op.AMOUNT*op.SELL_PRICE ELSE 0 END) AS 'Suma styczen',
+    SUM(CASE WHEN MONTH(o.ORDER_DATE)=2 THEN op.AMOUNT*op.SELL_PRICE ELSE 0 END) AS 'Suma luty',
+    SUM(CASE WHEN MONTH(o.ORDER_DATE)=3 THEN op.AMOUNT*op.SELL_PRICE ELSE 0 END) AS 'Suma marzec',
+    SUM(CASE WHEN MONTH(o.ORDER_DATE)=4 THEN op.AMOUNT*op.SELL_PRICE ELSE 0 END) AS 'Suma kwiecien',
+    ABS(
+        SUM(CASE WHEN MONTH(o.ORDER_DATE)=4 THEN op.AMOUNT*op.SELL_PRICE ELSE 0 END) -
+        SUM(CASE WHEN MONTH(o.ORDER_DATE)=1 THEN op.AMOUNT*op.SELL_PRICE ELSE 0 END)
+    ) AS 'Roznica miedzy kwietniem a styczniem
+FROM ORDER_POSITION op
+JOIN `ORDER` o ON op.ORDER_ID = o.ORDER_ID
+JOIN PRODUCT p ON op.PRODUCT_ID = p.PRODUCT_ID
+JOIN CATEGORY c ON p.CATEGORY_ID = c.CATEGORY_ID
+WHERE YEAR(o.ORDER_DATE) = 2025
+GROUP BY c.CATEGORY_ID, c.CATEGORY_NAME;
+
+
+Zadanie 7.
+
+SELECT
+    c.CATEGORY_NAME AS 'Nazwa kategorii',
+    p.PRODUCT_NAME AS 'Nazwa produktu',
+    op.SELL_PRICE AS Cena,
+    MIN(op.SELL_PRICE) OVER (PARTITION BY p.CATEGORY_ID) AS 'Cena minimalna',
+    MAX(op.SELL_PRICE) OVER (PARTITION BY p.CATEGORY_ID) AS 'Cena maksymalna',
+    MAX(op.SELL_PRICE) OVER (PARTITION BY p.CATEGORY_ID)
+      - MIN(op.SELL_PRICE) OVER (PARTITION BY p.CATEGORY_ID) AS 'Roznica'
+FROM ORDER_POSITION op
+JOIN PRODUCT p ON op.PRODUCT_ID = p.PRODUCT_ID
+JOIN CATEGORY c ON p.CATEGORY_ID = c.CATEGORY_ID;
+
+
+Zadanie 8.
+
+SELECT
+    p.PRODUCT_NAME AS 'Nazwa produktu,
+    op.SELL_PRICE AS Cena,
+    AVG(op.SELL_PRICE) OVER (
+        PARTITION BY p.PRODUCT_ID
+        ORDER BY o.ORDER_DATE
+        ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING
+    ) AS 'Srednia kroczaca cena'
+FROM ORDER_POSITION op
+JOIN `ORDER` o ON op.ORDER_ID = o.ORDER_ID
+JOIN PRODUCT p ON op.PRODUCT_ID = p.PRODUCT_ID;
+
+
+Zadanie 9.
+
+SELECT
+    p.PRODUCT_NAME AS 'Nazwa produktu',
+    c.CATEGORY_NAME AS Kategoria,
+    op.SELL_PRICE AS Cena,
+    RANK() OVER (
+        PARTITION BY p.CATEGORY_ID ORDER BY op.SELL_PRICE
+    ) AS 'Ranking cen',
+    ROW_NUMBER() OVER (
+        PARTITION BY p.CATEGORY_ID ORDER BY op.SELL_PRICE
+    ) AS row_num,
+    DENSE_RANK() OVER (
+        PARTITION BY p.CATEGORY_ID ORDER BY op.SELL_PRICE
+    ) AS 'Ranking gesty cen'
+FROM ORDER_POSITION op
+JOIN PRODUCT p ON op.PRODUCT_ID = p.PRODUCT_ID
+JOIN CATEGORY c ON p.CATEGORY_ID = c.CATEGORY_ID;
+
+
+Zadanie 10.
+
+SELECT
+    e.LAST_NAME AS Nazwisko,
+    p.PRODUCT_NAME AS 'Nazwa produktu',
+    op.AMOUNT * op.SELL_PRICE AS 'Wartosc sprzedazy pozycji',
+    SUM(op.AMOUNT * op.SELL_PRICE)
+        OVER (
+            PARTITION BY o.EMPLOYEE_ID
+            ORDER BY o.ORDER_DATE
+        ) AS 'Suma wartosci sprzedazy pracownika',
+    RANK() OVER (
+        PARTITION BY o.EMPLOYEE_ID
+        ORDER BY op.AMOUNT * op.SELL_PRICE DESC
+    ) AS 'Ranking pozycji sprzedazy'
+FROM ORDER_POSITION op
+JOIN `ORDER` o ON op.ORDER_ID = o.ORDER_ID
+JOIN EMPLOYEE e ON o.EMPLOYEE_ID = e.EMPLOYEE_NAME
+JOIN PRODUCT p ON op.PRODUCT_ID = p.PRODUCT_ID;
+
+
+Zadanie 11.
+
+SELECT DISTINCT
+    CONCAT(e.FIRST_NAME, " ", e.LAST_NAME) AS Nazwisko,
+    jp.POSITION_NAME AS Stanowisko
+FROM EMPLOYEE e
+JOIN `ORDER` o ON o.EMPLOYEE_ID = e.EMPLOYEE_NAME
+JOIN JOB_POSITION jp ON e.JOB_POSITION_ID = jp.JOB_POSITION_ID;
